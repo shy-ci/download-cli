@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "download-cli"
+version = "0.1.0"
+description = "Resumable parallel HTTP(S) downloads using aria2"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+
+[project.scripts]
+download-cli = "download_cli:main"
+
+[tool.setuptools]
+py-modules = ["download_cli"]
