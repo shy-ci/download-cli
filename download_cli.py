@@ -7,7 +7,7 @@ import re
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
 
@@ -25,7 +25,7 @@ def sha256_digest(value: str) -> str:
 
 
 def filename_from_url(url: str) -> str:
-    name = Path(unquote(urlsplit(url).path)).name
+    name = PurePosixPath(unquote(urlsplit(url).path)).name
     if not name or name in {".", ".."}:
         raise ValueError("URL has no filename; specify one with --output")
     return name
@@ -85,7 +85,13 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("URL must be HTTP or HTTPS")
     aria2 = shutil.which("aria2c")
     if aria2 is None:
-        parser.exit(2, "aria2c is required. macOS: brew install aria2; Linux: install aria2 with your package manager.\n")
+        if sys.platform == "darwin":
+            hint = "Install with: brew install aria2"
+        elif sys.platform == "win32":
+            hint = "Get aria2c.exe from https://github.com/aria2/aria2/releases and add its folder to PATH"
+        else:
+            hint = "Install aria2 with your package manager"
+        parser.exit(2, f"aria2c is required. {hint}.\n")
     try:
         name = args.output or Path(filename_from_url(args.url))
     except ValueError as error:

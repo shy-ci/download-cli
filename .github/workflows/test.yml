@@ -1,0 +1,28 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install aria2 (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y aria2
+      - name: Install aria2 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install aria2
+      - name: Install aria2 (Windows)
+        if: runner.os == 'Windows'
+        run: choco install aria2 --yes --no-progress
+      - name: Test
+        run: python -m unittest discover -s tests -v

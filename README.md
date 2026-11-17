@@ -2,21 +2,60 @@
 
 用一个命令下载大文件或慢速文件。底层使用 [aria2](https://aria2.github.io/) 的 HTTP 分段并发下载、断点续传和自动重试；`download-cli` 提供简单的参数和可选的完整性校验。
 
-## 安装
+## macOS 安装与使用
 
-需要 Python 3.9+ 和 `aria2c`。
+需要 Python 3.9+、[Homebrew](https://brew.sh/) 和 `aria2c`。在“终端”运行：
 
 ```bash
-# macOS
 brew install aria2
-
-# Ubuntu / Debian
-sudo apt install aria2
-
-python3 -m pip install git+https://github.com/shy-ci/download-cli.git
+python3 -m pip install --user https://github.com/shy-ci/download-cli/archive/refs/heads/main.zip
+download-cli 'https://example.com/large-file.zip' -d ~/Downloads -c 16
 ```
 
-也可以克隆仓库后直接运行 `python3 download_cli.py URL`，无需安装 Python 包。
+如果安装后提示找不到 `download-cli`，可以改用下面的“直接运行源码”方式。
+
+## Windows 安装与使用
+
+需要 [Python 3.9+](https://www.python.org/downloads/windows/) 和 `aria2c.exe`。在 [aria2 官方发布页](https://github.com/aria2/aria2/releases)下载适合自己系统的 Windows ZIP，解压后把 **`aria2c.exe` 所在文件夹**加入 Windows 的 `Path` 环境变量。重新打开 PowerShell，先检查：
+
+```powershell
+py --version
+aria2c --version
+```
+
+然后在 PowerShell 中安装并下载：
+
+```powershell
+py -m pip install --user https://github.com/shy-ci/download-cli/archive/refs/heads/main.zip
+download-cli 'https://example.com/large-file.zip' -d "$HOME\Downloads" -c 16
+```
+
+如果 `py` 不存在，尝试把上述 `py` 换成 `python`。如果安装后提示找不到 `download-cli`，可以改用下面的“直接运行源码”方式。
+
+### 直接运行源码（两种系统通用）
+
+从本仓库的 **Code → Download ZIP** 下载源码并解压。进入解压后的文件夹，再运行：
+
+```bash
+# macOS 终端
+python3 download_cli.py 'https://example.com/large-file.zip' -d ~/Downloads
+```
+
+```powershell
+# Windows PowerShell
+py .\download_cli.py 'https://example.com/large-file.zip' -d "$HOME\Downloads"
+```
+
+这种方式无需安装 Python 包，但仍需要 `aria2c` 可在命令行中找到。
+
+## Linux 安装
+
+以 Ubuntu / Debian 为例：
+
+```bash
+sudo apt install aria2
+python3 -m pip install --user https://github.com/shy-ci/download-cli/archive/refs/heads/main.zip
+```
 
 ## 使用
 
@@ -33,7 +72,7 @@ download-cli 'https://example.com/large-file.zip' -o ~/Downloads/large-file.zip 
 # 有官方 SHA-256 值时，让 aria2 校验下载结果
 download-cli 'https://example.com/large-file.zip' --sha256 '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 
-# macOS DMG：下载完成后验证磁盘映像
+# macOS DMG：下载完成后验证磁盘映像（Windows 不使用此参数）
 download-cli 'https://example.com/App.dmg' -d ~/Downloads --verify-dmg
 
 # 慢连接：增加重试次数、等待时间和空闲超时
@@ -55,6 +94,8 @@ download-cli 'https://example.com/large-file.zip' --max-speed 2M
 - 本工具适合公开可直接访问的 HTTP(S) 文件。带登录态、临时签名或防盗链的链接可能需要重新获取可用 URL。
 
 ## 这次 Antigravity 下载的命令
+
+下面是 **Mac ARM 版**下载命令；Windows 应换成软件提供的 Windows 安装包链接，不要下载这个 DMG。
 
 ```bash
 download-cli 'https://storage.googleapis.com/antigravity-public/antigravity-hub/2.32.2-4665802025205760/darwin-arm/Antigravity.dmg' \
