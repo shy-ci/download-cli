@@ -36,10 +36,10 @@ download-cli 'https://example.com/large-file.zip' -d "$HOME\Downloads" -c 16
 下载 `.m3u8` 视频时，当前 yt-dlp 需要 Python 3.11 或更新版本。CMD 示例：
 
 ```cmd
-py download_cli.py "https://example.com/video/index.m3u8" -o "第20261115期.m3u8" -d "E:\nowgogogo" -c 8
+py download_cli.py "https://example.com/video/index.m3u8" -o "第20261115期.mp4" -d "E:\nowgogogo" -c 8
 ```
 
-工具会把 `-c 8` 作为 8 个 HLS 分片并发数传给 yt-dlp，并按媒体格式生成最终扩展名。
+工具会把 `-c 8` 作为 8 个 HLS 分片并发数传给 yt-dlp。指定 `.mp4` 时会请求转封装为 MP4，需要系统已安装 FFmpeg。
 
 如果 `py` 不存在，尝试把上述 `py` 换成 `python`。如果安装后提示找不到 `download-cli`，可以改用下面的“直接运行源码”方式。
 
@@ -78,8 +78,8 @@ download-cli 'https://example.com/large-file.zip'
 # 普通文件：指定保存路径和 HTTP 并发连接数
 download-cli 'https://example.com/large-file.zip' -o ~/Downloads/large-file.zip -c 16
 
-# HLS 视频：并发下载 8 个分片，输出文件扩展名由 yt-dlp 选择
-download-cli 'https://example.com/video/index.m3u8' -o ~/Downloads/video -c 8
+# HLS 视频：并发下载 8 个分片，并转封装为 MP4（需要 FFmpeg）
+download-cli 'https://example.com/video/index.m3u8' -o ~/Downloads/video.mp4 -c 8
 
 # 下载中断后，重新运行完全相同的命令即可续传
 download-cli 'https://example.com/large-file.zip' -o ~/Downloads/large-file.zip -c 16

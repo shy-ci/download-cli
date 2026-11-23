@@ -82,6 +82,9 @@ def build_hls_command(args: argparse.Namespace, target: Path) -> list[str]:
         "--output",
         str(output_template),
     ]
+    requested_container = target.suffix.lower().lstrip(".")
+    if args.output and requested_container in {"mp4", "mkv", "mov", "webm"}:
+        command.extend(["--remux-video", requested_container])
     if args.max_speed:
         command.extend(["--limit-rate", args.max_speed])
     command.append(args.url)
