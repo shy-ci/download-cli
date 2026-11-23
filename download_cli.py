@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import re
 import shutil
 import subprocess
@@ -57,15 +58,45 @@ def build_command(args: argparse.Namespace, aria2: str, target: Path) -> list[st
     return command
 
 
+def is_hls_url(url: str) -> bool:
+    return urlsplit(url).path.lower().endswith(".m3u8")
+
+
+def build_hls_command(args: argparse.Namespace, target: Path) -> list[str]:
+    output_template = target.with_suffix("").with_name(target.stem + ".%(ext)s")
+    command = [
+        sys.executable,
+        "-m",
+        "yt_dlp",
+        "--continue",
+        "--concurrent-fragments",
+        str(args.connections),
+        "--retries",
+        str(args.retries),
+        "--fragment-retries",
+        str(args.retries),
+        "--retry-sleep",
+        f"fragment:{args.retry_wait}",
+        "--socket-timeout",
+        str(args.timeout),
+        "--output",
+        str(output_template),
+    ]
+    if args.max_speed:
+        command.extend(["--limit-rate", args.max_speed])
+    command.append(args.url)
+    return command
+
+
 def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="download-cli",
-        description="Download large or slow HTTP(S) files with concurrent ranges and resume support.",
+        description="Download direct files or HLS streams with concurrency and resume support.",
     )
     parser.add_argument("url", help="HTTP or HTTPS download URL")
     parser.add_argument("-o", "--output", type=Path, help="output filename or path (default: URL filename)")
     parser.add_argument("-d", "--directory", type=Path, default=Path.cwd(), help="download directory")
-    parser.add_argument("-c", "--connections", type=positive_int, default=16, help="parallel connections (default: 16)")
+    parser.add_argument("-c", "--connections", type=positive_int, default=8, help="parallel connections or HLS fragments (default: 8)")
     parser.add_argument("--min-split-size", default="1M", help="minimum segment size (default: 1M)")
     parser.add_argument("--retries", type=positive_int, default=20, help="attempts per segment (default: 20)")
     parser.add_argument("--retry-wait", type=positive_int, default=5, help="seconds between retries (default: 5)")
@@ -83,6 +114,25 @@ def main(argv: list[str] | None = None) -> int:
     parsed = urlsplit(args.url)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         parser.error("URL must be HTTP or HTTPS")
+    hls = is_hls_url(args.url)
+    if hls:
+        if args.sha256:
+            parser.error("--sha256 is not supported for HLS streams")
+        if args.verify_dmg:
+            parser.error("--verify-dmg is not supported for HLS streams")
+        if importlib.util.find_spec("yt_dlp") is None:
+            parser.exit(2, "yt-dlp is required for .m3u8 streams. Install it with: py -m pip install -U yt-dlp\n")
+        name = args.output or Path(filename_from_url(args.url))
+        target = (args.directory / name).expanduser().resolve()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        print(f"Downloading HLS stream with {args.connections} parallel fragments to {target.parent}", flush=True)
+        result = subprocess.run(build_hls_command(args, target), check=False)
+        if result.returncode:
+            print(f"HLS download failed (yt-dlp exit code {result.returncode}). Run the same command to resume.", file=sys.stderr)
+            return result.returncode
+        print(f"HLS download complete: {target.parent / (target.stem + '.*')}")
+        return 0
+
     aria2 = shutil.which("aria2c")
     if aria2 is None:
         if sys.platform == "darwin":
